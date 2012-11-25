@@ -50,9 +50,9 @@ class ApplicationSpec extends Specification {
       val json = Json.parse(contentAsString(result))
       
       // ensure we have an id
-      val id = (json \ "user" \ "id").asOpt[Int]
+      val id = (json \ "user" \ "id").asOpt[String]
       id must not be none
-      id.get mustEqual 1234
+      id.get mustEqual "/users/1234"
     }
 
     "returns an error for a nonexistent user: GET /users/{id}" in {
@@ -74,9 +74,9 @@ class ApplicationSpec extends Specification {
       val json = Json.parse(contentAsString(result))
       
       // ensure we have an id
-      val id = (json \ "user" \ "id").asOpt[Int]
+      val id = (json \ "user" \ "id").asOpt[String]
       id must not be none
-      id.get mustEqual 1234
+      id.get mustEqual "/users/1234"
 
       // ensure we have a list of items
       val items = (json \ "items").asOpt[List[String]]

@@ -25,7 +25,7 @@ While an error looks like:
 ```javascript
 {
   "status": 404,
-  "message": "The user [1234] could not be found."
+  "message": "The user [/users/1234] could not be found."
 }
 ```
 
@@ -37,7 +37,7 @@ Get information about a particular user. In addition to the standard response:
 ```javascript
 {
   "user": {
-    "id": 1234
+    "id": /users/1234
   }
 }
 ```
@@ -51,12 +51,12 @@ response:
 ```javascript
 {
   "user": {
-    "id": 1234
+    "id": "/users/1234"
   },
   "items": [
-    "item-id-1",
-    "item-id-2",
-    "item-id-3"
+    "/users/1234/items/item-id-1",
+    "/users/1234/items/item-id-2",
+    "/users/1234/items/item-id-3"
   ]
 }
 ```
