@@ -64,17 +64,10 @@ object Application extends Controller {
   def get_user(id: Long) = Action {
     get_user_by_id(id) match {
       case Some(user) => Ok(
-        JsObject(
-          "user"    -> user_to_jsobject(user) ::
-          Nil
-        ) ++ success_message
+        success_message ++ user_to_jsobject(user)
       )
       case _ => NotFound(
-        JsObject(
-          "status" -> JsNumber(404) ::
-          "message" -> JsString("User ["+get_user_uri(id)+"] not found.") ::
-          Nil
-        )
+        error_message(404, "User ["+get_user_uri(id)+"] not found.")
       )
     }
   }

@@ -36,9 +36,7 @@ Get information about a particular user. In addition to the standard response:
 
 ```javascript
 {
-  "user": {
-    "id": /users/1234
-  }
+  "id": /users/1234
 }
 ```
 

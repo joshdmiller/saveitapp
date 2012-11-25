@@ -57,7 +57,7 @@ class ApplicationSpec extends Specification {
       val json = Json.parse(contentAsString(result))
       
       // ensure we have an id
-      val id = (json \ "user" \ "id").asOpt[String]
+      val id = (json \ "id").asOpt[String]
       id must not be none
       id.get mustEqual "/users/1234"
     }
