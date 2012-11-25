@@ -54,5 +54,34 @@ class ApplicationSpec extends Specification {
       id must not be none
       id.get mustEqual 1234
     }
+
+    "returns an error for a nonexistent user: GET /users/{id}" in {
+      val apiCall = routeAndCall(FakeRequest(GET, "/users/5678"))
+      apiCall must not be none
+
+      val  result = apiCall.get
+      status(result) must equalTo(NOT_FOUND)
+      contentType(result) must beSome.which(_ == "application/json")
+      
+      val json = Json.parse(contentAsString(result))
+      val code = (json \ "status").asOpt[Int]
+      code must not be none
+      code.get mustEqual NOT_FOUND
+    }
+
+    "returns a list of items for a user: GET /users/{id}/items" in {
+      val result = routeAndCall(FakeRequest(GET, "/users/1234/items")).get
+      val json = Json.parse(contentAsString(result))
+      
+      // ensure we have an id
+      val id = (json \ "user" \ "id").asOpt[Int]
+      id must not be none
+      id.get mustEqual 1234
+
+      // ensure we have a list of items
+      val items = (json \ "items").asOpt[List[String]]
+      items must not be none
+      items.get.length mustEqual 3
+    }
   }
 }
