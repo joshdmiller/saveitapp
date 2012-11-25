@@ -80,15 +80,39 @@ class ApplicationSpec extends Specification {
       val result = routeAndCall(FakeRequest(GET, "/users/1234/items")).get
       val json = Json.parse(contentAsString(result))
       
+      val code = (json \ "status").asOpt[Int]
+      code must not be none
+      code.get mustEqual OK
+      
       // ensure we have an id
-      val id = (json \ "user" \ "id").asOpt[String]
-      id must not be none
-      id.get mustEqual "/users/1234"
+      val userid = (json \ "user" \ "id").asOpt[String]
+      userid must not be none
+      userid.get mustEqual "/users/1234"
 
       // ensure we have a list of items
       val items = (json \ "items").asOpt[List[String]]
       items must not be none
       items.get.length mustEqual 3
+    }
+
+    "returns a particular article: GET /users/{id}/items/{id}" in {
+      val apiCall = routeAndCall(FakeRequest(GET, "/users/1234/items/valid-item"))
+      apiCall must not be none
+      val json = Json.parse(contentAsString(apiCall.get))
+      
+      val code = (json \ "status").asOpt[Int]
+      code must not be none
+      code.get mustEqual OK
+      
+      // ensure we have an id
+      val userid = (json \ "user" \ "id").asOpt[String]
+      userid must not be none
+      userid.get mustEqual "/users/1234"
+
+      // ensure we have an item
+      val id = (json \ "id").asOpt[String]
+      id must not be none
+      id.get mustEqual "/users/1234/items/valid-item"
     }
   }
 }

@@ -61,3 +61,17 @@ response:
 }
 ```
 
+GET /users/{user_id}/items/{item_id}
+------------------------------------
+
+Get a particular item. In addition to the standard response:
+
+```javascript
+{
+  "user": {
+    "id": "/users/1234"
+  },
+  id: "/users/1234/items/item-id-1"
+}
+```
+
