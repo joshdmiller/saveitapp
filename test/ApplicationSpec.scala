@@ -5,6 +5,7 @@ import org.specs2.mutable._
 import play.api.test._
 import play.api.test.Helpers._
 import play.api.libs.json._
+import play.api.libs.ws.WS
 
 /**
  * Add your spec here.
@@ -16,19 +17,25 @@ class ApplicationSpec extends Specification {
   "Application" should {
     
     "send 404 on a bad request" in {
-      running(FakeApplication()) {
-        routeAndCall(FakeRequest(GET, "/boum")) must beNone
+      running(TestServer(3333)) {
+        val apiCall = await(WS.url("http://localhost:3333/blah").get)
+        
+        apiCall.status mustEqual NOT_FOUND
+        apiCall.getAHCResponse.getContentType must contain("application/json")
+      
+        val json = apiCall.json
+        val code = (json \ "status").asOpt[Int]
+        code must not be none
+        code.get mustEqual NOT_FOUND
       }
     }
     
     "render the index page" in {
-      running(FakeApplication()) {
-        val home = routeAndCall(FakeRequest(GET, "/")).get
-        
-        status(home) must equalTo(OK)
-        contentType(home) must beSome.which(_ == "text/html")
-        contentAsString(home) must contain ("Save It App Home")
-      }
+      val home = routeAndCall(FakeRequest(GET, "/")).get
+      
+      status(home) must equalTo(OK)
+      contentType(home) must beSome.which(_ == "text/html")
+      contentAsString(home) must contain ("Save It App Home")
     }
 
     "return JSON from API call: GET /users/{id}" in {
