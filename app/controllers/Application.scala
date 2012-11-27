@@ -41,9 +41,9 @@ object Application extends Controller {
   def create_user = Action { implicit request =>
     request.body.asJson.map { json =>
       (json \ "username").asOpt[String].map { un =>
-        UserDAO.insert(User(id = new ObjectId, username = un)) match {
+        UserDAO.insert(User(username = un)) match {
           case Some(oid) => Ok(
-            success_message
+            success_message ++ JsObject("id" -> JsString("/users/"+un) :: Nil)
           )
           case _ => {
             // FIXME: better error reporting
@@ -51,7 +51,7 @@ object Application extends Controller {
           }
         }
       }.getOrElse {
-        BadRequest("Missing parameter [username]")
+        BadRequest("Missing parameter [username].")
       }
     }.getOrElse {
       BadRequest("Requests must be made in JSON.")
@@ -59,7 +59,6 @@ object Application extends Controller {
   }
 
   def get_items(username: String) = Action {
-    // FIXME: static list of items
     UserDAO.by_username(username) match {
       case Some(user) => {
         val items = new collection.mutable.ListBuffer[JsString]()
@@ -97,4 +96,31 @@ object Application extends Controller {
     }
   }
   
+  def create_item(username: String) = Action { implicit request =>
+    request.body.asJson.map { json =>
+      (json \ "title").asOpt[String].map { title =>
+        UserDAO.by_username(username) match {
+          case Some(user) => {
+            ItemDAO.insert(Item(id = new ObjectId, user_id = user.id, title = title)) match {
+              case Some(oid) => Ok(
+                success_message ++ JsObject("id" -> JsString("/users/"+username+"/items/"+oid.toString) :: Nil)
+              )
+              case _ => {
+                // FIXME: better error reporting
+                InternalServerError("Could not create item.")
+              }
+            }
+          }
+          case _ => NotFound(
+            error_message(404, "User [/user/"+username+"] not found")
+          )
+        }
+      }.getOrElse {
+        BadRequest("Missing parameter [title].")
+      }
+    }.getOrElse {
+      BadRequest("Requests must be made in JSON.")
+    }
+  }
+
 }

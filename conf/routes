@@ -10,6 +10,7 @@ POST    /users                      controllers.Application.create_user
 GET     /users/:id                  controllers.Application.get_user(id: String) 
 
 # API: items
+POST    /users/:userid/items        controllers.Application.create_item(userid: String)
 GET     /users/:userid/items        controllers.Application.get_items(userid: String)
 GET     /users/:user_id/items/:id   controllers.Application.get_item(user_id: String, id: String)
 

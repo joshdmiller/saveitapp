@@ -10,9 +10,9 @@ import com.mongodb.casbah.MongoConnection
 import play.api.Play
 import play.api.libs.json._
 
-case class User (@Key("_id") id: ObjectId, username: String)
+case class User (@Key("_id") id: ObjectId = new ObjectId, username: String)
 
-object UserDAO extends SalatDAO[User, Int](collection = MongoConnection()(
+object UserDAO extends SalatDAO[User, ObjectId](collection = MongoConnection()(
   Play.current.configuration.getString("mongo.db").get
 )("users")) {
 

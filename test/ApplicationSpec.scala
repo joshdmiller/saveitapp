@@ -21,9 +21,22 @@ class ApplicationSpec extends Specification {
     // A user with which to test
     val rand     = new scala.util.Random
     val username = "testuser-"+rand.nextInt(1000)
+
+    // A placeholder for a created item's id
+    var item_uri  = ""
+
+    /* BASIC TESTS */
     
+    "render the index page" in {
+      val home = routeAndCall(FakeRequest(GET, "/")).get
+      
+      status(home) must equalTo(OK)
+      contentType(home) must beSome.which(_ == "text/html")
+      contentAsString(home) must contain ("Save It App Home")
+    }
+
     "send 404 on a bad request" in {
-      running(TestServer(3333)) {
+      running(server) {
         val apiCall = await(WS.url("http://localhost:3333/blah").get)
         
         apiCall.status mustEqual NOT_FOUND
@@ -35,14 +48,41 @@ class ApplicationSpec extends Specification {
         code.get mustEqual NOT_FOUND
       }
     }
+
+    /* NON-EXISTENT USER */
     
-    "render the index page" in {
-      val home = routeAndCall(FakeRequest(GET, "/")).get
-      
-      status(home) must equalTo(OK)
-      contentType(home) must beSome.which(_ == "text/html")
-      contentAsString(home) must contain ("Save It App Home")
+    "returns an error for a nonexistent user: GET /users/"+username in {
+      running(server) {
+        val response = await(WS.url("http://localhost:3333/users/"+username).get)
+        response must not be none
+
+        response.status mustEqual NOT_FOUND
+        response.getAHCResponse.getContentType must contain("application/json")
+        
+        val json = Json.parse(response.body)
+        val code = (json \ "status").asOpt[Int]
+        code must not be none
+        code.get mustEqual NOT_FOUND
+      }
     }
+
+    // TODO: nonexistent user's items returns 404
+    "returns 404 for a nonexistent user's items: GET /users/"+username+"/items" in {
+      running(server) {
+        val response = await(WS.url("http://localhost:3333/users/"+username+"/items").get)
+        response must not be none
+
+        response.status mustEqual NOT_FOUND
+        response.getAHCResponse.getContentType must contain("application/json")
+        
+        val json = Json.parse(response.body)
+        val code = (json \ "status").asOpt[Int]
+        code must not be none
+        code.get mustEqual NOT_FOUND
+      }
+    }
+
+    /* USER RESOURCE */
 
     "can create a user: POST /users" in {
       running(server) {
@@ -68,7 +108,7 @@ class ApplicationSpec extends Specification {
       }
     }
 
-    "return JSON from API call: GET /users/{id}" in {
+    "return JSON from API call: GET /users/"+username in {
       running(server) {
         val response = await(WS.url("http://localhost:3333/users/"+username).get)
         response must not be none
@@ -88,27 +128,14 @@ class ApplicationSpec extends Specification {
       }
     }
 
-    "returns an error for a nonexistent user: GET /users/{id}" in {
-      running(FakeApplication()) {
-        val apiCall = routeAndCall(FakeRequest(GET, "/users/5678"))
-        apiCall must not be none
+    /* ITEM RESOURCE */
 
-        val  result = apiCall.get
-        status(result) must equalTo(NOT_FOUND)
-        contentType(result) must beSome.which(_ == "application/json")
+    "returns an empty list of items for a new user: GET /users/"+username+"/items" in {
+      running(server) {
+        val response = await(WS.url("http://localhost:3333/users/"+username+"/items").get)
+        response must not be none
         
-        val json = Json.parse(contentAsString(result))
-        val code = (json \ "status").asOpt[Int]
-        code must not be none
-        code.get mustEqual NOT_FOUND
-      }
-    }
-
-    "returns a list of items for a user: GET /users/{id}/items" in {
-      running(FakeApplication()) {
-        val result = routeAndCall(FakeRequest(GET, "/users/joshdmiller/items")).get
-        val json = Json.parse(contentAsString(result))
-        
+        val json = Json.parse(response.body)
         val code = (json \ "status").asOpt[Int]
         code must not be none
         code.get mustEqual OK
@@ -116,34 +143,72 @@ class ApplicationSpec extends Specification {
         // ensure we have an id
         val userid = (json \ "user" \ "id").asOpt[String]
         userid must not be none
-        userid.get mustEqual "/users/joshdmiller"
+        userid.get mustEqual "/users/"+username
 
         // ensure we have a list of items
         val items = (json \ "items").asOpt[List[String]]
         items must not be none
-        items.get.length mustEqual 3
+        items.get.length mustEqual 0
       }
     }
 
-    "returns a particular article: GET /users/{id}/items/{id}" in {
-      running(FakeApplication()) {
-        val list_result = routeAndCall(FakeRequest(GET, "/users/joshdmiller/items")).get
-        val list_json = Json.parse(contentAsString(list_result))
-        val items: List[String] = (list_json \ "items").as[List[String]]
-        val item_uri = items(0)
+    "can create an item for a user: POST /users/"+username+"/items" in {
+      running(server) {
+        val body = JsObject(
+          "title" -> JsString("test-item") :: 
+          Nil
+        )
+
+        val response = await(WS
+          .url("http://localhost:3333/users/"+username+"/items")
+          .withHeaders("Content-Type" -> "application/json")
+          .post(body)
+        )
         
-        val apiCall = routeAndCall(FakeRequest(GET, item_uri))
-        apiCall must not be none
-        val json = Json.parse(contentAsString(apiCall.get))
+        response must not be none
+        response.status mustEqual OK
+        response.getAHCResponse.getContentType must contain("application/json")
         
+        val json = Json.parse(response.body)
+        val code = (json \ "status").asOpt[Int]
+        code must not be none
+        code.get mustEqual OK
+
+        val oid = (json \ "id").asOpt[String]
+        oid must not be none
+        item_uri = oid.get
+        success
+      }
+    }
+
+    "returns a list of items for a user: GET /users/"+username+"/items" in {
+      running(server) {
+        val response = await(WS.url("http://localhost:3333/users/"+username+"/items").get)
+        response must not be none
+        
+        // ensure we have a list of items
+        val json = Json.parse(response.body)
+        val items = (json \ "items").asOpt[List[String]]
+        items must not be none
+        items.get.length mustEqual 1
+        items.get.contains(item_uri) must beTrue
+      }
+    }
+
+    "returns a particular item: GET "+item_uri in {
+      running(server) {
+        val response = await(WS.url("http://localhost:3333"+item_uri).get)
+        response must not be none
+        
+        val json = Json.parse(response.body)  
         val code = (json \ "status").asOpt[Int]
         code must not be none
         code.get mustEqual OK
         
-        // ensure we have an id
+        // ensure we have a user id
         val userid = (json \ "user" \ "id").asOpt[String]
         userid must not be none
-        userid.get mustEqual "/users/joshdmiller"
+        userid.get mustEqual "/users/"+username
 
         // ensure we have an item
         val id = (json \ "id").asOpt[String]

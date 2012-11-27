@@ -12,7 +12,7 @@ import play.api.libs.json._
 
 case class Item (@Key("_id") id: ObjectId, title: String, user_id: ObjectId)
 
-object ItemDAO extends SalatDAO[Item, Int](collection = MongoConnection()(
+object ItemDAO extends SalatDAO[Item, ObjectId](collection = MongoConnection()(
   Play.current.configuration.getString("mongo.db").get
 )("items")) {
 
