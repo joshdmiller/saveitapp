@@ -29,6 +29,22 @@ While an error looks like:
 }
 ```
 
+
+POST /users
+-----------
+
+Create a new user. The content type of the body must be JSON and it must include
+a username:
+
+```javascript
+{
+  "username": "myuser"
+}
+```
+
+Returns the standard response.
+
+
 GET /users/{id}
 ---------------
 
@@ -36,7 +52,7 @@ Get information about a particular user. In addition to the standard response:
 
 ```javascript
 {
-  "id": /users/1234
+  "id": "/users/1234"
 }
 ```
 
@@ -58,6 +74,20 @@ response:
   ]
 }
 ```
+
+POST /users/{username}/items
+----------------------------
+
+Create a new item for a user. The content type of the body must be JSON and it
+must include a title:
+
+```javascript
+{
+  "title": "this is a note title"
+}
+```
+
+Returns the standard response.
 
 GET /users/{user_id}/items/{item_id}
 ------------------------------------
