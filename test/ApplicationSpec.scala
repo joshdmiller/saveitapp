@@ -15,6 +15,12 @@ import play.api.libs.ws.WS
 class ApplicationSpec extends Specification {
   
   "Application" should {
+    val app      = FakeApplication()
+    val server   = TestServer(3333)
+
+    // A user with which to test
+    val rand     = new scala.util.Random
+    val username = "testuser-"+rand.nextInt(1000)
     
     "send 404 on a bad request" in {
       running(TestServer(3333)) {
@@ -38,31 +44,47 @@ class ApplicationSpec extends Specification {
       contentAsString(home) must contain ("Save It App Home")
     }
 
-    "return JSON from API call: GET /users/{id}" in {
-      running(FakeApplication()) {
-        val apiCall = routeAndCall(FakeRequest(GET, "/users/joshdmiller"))
-        apiCall must not be none
+    "can create a user: POST /users" in {
+      running(server) {
+        val body = JsObject(
+          "username" -> JsString(username) :: 
+          Nil
+        )
 
-        val  result = apiCall.get
-        status(result) must equalTo(OK)
-        contentType(result) must beSome.which(_ == "application/json")
+        val response = await(WS
+          .url("http://localhost:3333/users")
+          .withHeaders("Content-Type" -> "application/json")
+          .post(body)
+        )
+
+        response must not be none
+        response.status mustEqual OK
+        response.getAHCResponse.getContentType must contain("application/json")
         
-        val json = Json.parse(contentAsString(result))
+        val json = Json.parse(response.body)
         val code = (json \ "status").asOpt[Int]
         code must not be none
         code.get mustEqual OK
       }
     }
 
-    "return valid user data from API call: GET /users/{id}" in {
-      running(FakeApplication()) {
-        val result = routeAndCall(FakeRequest(GET, "/users/joshdmiller")).get
-        val json = Json.parse(contentAsString(result))
+    "return JSON from API call: GET /users/{id}" in {
+      running(server) {
+        val response = await(WS.url("http://localhost:3333/users/"+username).get)
+        response must not be none
+
+        response.status mustEqual OK
+        response.getAHCResponse.getContentType must contain("application/json")
+        
+        val json = Json.parse(response.body)
+        val code = (json \ "status").asOpt[Int]
+        code must not be none
+        code.get mustEqual OK
         
         // ensure we have an id
         val id = (json \ "id").asOpt[String]
         id must not be none
-        id.get mustEqual "/users/joshdmiller"
+        id.get mustEqual "/users/"+username
       }
     }
 

@@ -11,7 +11,7 @@ import play.api.test.Helpers._
  */
 class IntegrationSpec extends Specification {
   
-  "Application" should {
+  /*"Application" should {
     
     "work from within a browser" in {
       running(TestServer(3333), HTMLUNIT) { browser =>
@@ -23,6 +23,6 @@ class IntegrationSpec extends Specification {
       }
     }
     
-  }
+  }*/
   
 }

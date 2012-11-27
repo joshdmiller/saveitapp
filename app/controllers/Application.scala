@@ -38,6 +38,26 @@ object Application extends Controller {
     }
   }
 
+  def create_user = Action { implicit request =>
+    request.body.asJson.map { json =>
+      (json \ "username").asOpt[String].map { un =>
+        UserDAO.insert(User(id = new ObjectId, username = un)) match {
+          case Some(oid) => Ok(
+            success_message
+          )
+          case _ => {
+            // FIXME: better error reporting
+            InternalServerError("Could not create user.")
+          }
+        }
+      }.getOrElse {
+        BadRequest("Missing parameter [username]")
+      }
+    }.getOrElse {
+      BadRequest("Requests must be made in JSON.")
+    }
+  }
+
   def get_items(username: String) = Action {
     // FIXME: static list of items
     UserDAO.by_username(username) match {

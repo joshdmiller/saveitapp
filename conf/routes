@@ -6,6 +6,7 @@
 GET     /                           controllers.Application.index
 
 # API: users
+POST    /users                      controllers.Application.create_user 
 GET     /users/:id                  controllers.Application.get_user(id: String) 
 
 # API: items
